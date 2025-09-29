@@ -14,6 +14,7 @@ const PongWars = () => {
   const [dayScore, setDayScore] = useState(0);
   const [nightScore, setNightScore] = useState(0);
   const [iteration, setIteration] = useState(0);
+  const [timeRemaining, setTimeRemaining] = useState(60);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -32,6 +33,7 @@ const PongWars = () => {
     const MIN_SPEED = 5;
     const MAX_SPEED = 10;
     const FRAME_RATE = 100;
+    const RESET_TIME = 60; // Reset after 60 seconds
 
     const numSquaresX = canvas.width / SQUARE_SIZE;
     const numSquaresY = canvas.height / SQUARE_SIZE;
@@ -39,18 +41,24 @@ const PongWars = () => {
     let currentDayScore = 0;
     let currentNightScore = 0;
     let currentIteration = 0;
+    let startTime = Date.now();
 
     // Initialize game board - split in half
-    const squares: string[][] = [];
-    for (let i = 0; i < numSquaresX; i++) {
-      squares[i] = [];
-      for (let j = 0; j < numSquaresY; j++) {
-        squares[i][j] = i < numSquaresX / 2 ? DAY_COLOR : NIGHT_COLOR;
+    const initializeBoard = () => {
+      const squares: string[][] = [];
+      for (let i = 0; i < numSquaresX; i++) {
+        squares[i] = [];
+        for (let j = 0; j < numSquaresY; j++) {
+          squares[i][j] = i < numSquaresX / 2 ? DAY_COLOR : NIGHT_COLOR;
+        }
       }
-    }
+      return squares;
+    };
+
+    let squares = initializeBoard();
 
     // Initialize balls
-    const balls: Ball[] = [
+    const initializeBalls = (): Ball[] => [
       {
         x: canvas.width / 4,
         y: canvas.height / 2,
@@ -68,6 +76,8 @@ const PongWars = () => {
         ballColor: NIGHT_BALL_COLOR,
       },
     ];
+
+    let balls = initializeBalls();
 
     const drawBall = (ball: Ball) => {
       ctx.beginPath();
@@ -150,7 +160,26 @@ const PongWars = () => {
       if (Math.abs(ball.dy) < MIN_SPEED) ball.dy = ball.dy > 0 ? MIN_SPEED : -MIN_SPEED;
     };
 
+    const resetGame = () => {
+      squares = initializeBoard();
+      balls.length = 0;
+      balls.push(...initializeBalls());
+      currentIteration = 0;
+      startTime = Date.now();
+      console.log("Game reset for seamless loop");
+    };
+
     const draw = () => {
+      // Check if 60 seconds have passed
+      const elapsedTime = (Date.now() - startTime) / 1000;
+      const remaining = Math.max(0, RESET_TIME - elapsedTime);
+      setTimeRemaining(Math.ceil(remaining));
+
+      if (elapsedTime >= RESET_TIME) {
+        resetGame();
+        return;
+      }
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawSquares();
 
@@ -197,10 +226,16 @@ const PongWars = () => {
             $HYPE {dayScore} | $ASTER {nightScore}
           </div>
           <div 
-            className="text-sm font-mono opacity-70"
+            className="text-sm font-mono opacity-70 mb-1"
             style={{ color: 'hsl(var(--score-text))' }}
           >
             iteration {iteration.toLocaleString()}
+          </div>
+          <div 
+            className="text-sm font-mono opacity-90"
+            style={{ color: timeRemaining <= 10 ? '#ff6b35' : 'hsl(var(--score-text))' }}
+          >
+            reset in: {timeRemaining}s
           </div>
         </div>
 
