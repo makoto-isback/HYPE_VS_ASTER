@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import greenLogo from '@/assets/green-logo.png';
+import yellowLogo from '@/assets/yellow-logo.jpg';
 
 interface Ball {
   x: number;
@@ -7,6 +9,16 @@ interface Ball {
   dy: number;
   reverseColor: string;
   ballColor: string;
+  logoSrc: string;
+}
+
+interface Spark {
+  x: number;
+  y: number;
+  dx: number;
+  dy: number;
+  life: number;
+  maxLife: number;
 }
 
 const PongWars = () => {
@@ -15,6 +27,7 @@ const PongWars = () => {
   const [nightScore, setNightScore] = useState(0);
   const [iteration, setIteration] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState(60);
+  const [sparks, setSparks] = useState<Spark[]>([]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -24,7 +37,7 @@ const PongWars = () => {
     if (!ctx) return;
 
     // Game constants - matching your color requirements
-    const DAY_COLOR = '#072723';      // Your first color
+    const DAY_COLOR = '#97FCE4';      // Updated first color
     const NIGHT_COLOR = '#151515';    // Your second color  
     const DAY_BALL_COLOR = '#97FCE4'; // Mint ball for sage territory
     const NIGHT_BALL_COLOR = '#F7D4AC'; // Golden ball for charcoal territory
@@ -42,6 +55,13 @@ const PongWars = () => {
     let currentNightScore = 0;
     let currentIteration = 0;
     let startTime = Date.now();
+    let currentSparks: Spark[] = [];
+
+    // Load logos
+    const greenImg = new Image();
+    greenImg.src = greenLogo;
+    const yellowImg = new Image();
+    yellowImg.src = yellowLogo;
 
     // Initialize game board - split in half
     const initializeBoard = () => {
@@ -66,6 +86,7 @@ const PongWars = () => {
         dy: -8,
         reverseColor: DAY_COLOR,
         ballColor: DAY_BALL_COLOR,
+        logoSrc: greenLogo,
       },
       {
         x: (canvas.width / 4) * 3,
@@ -74,24 +95,57 @@ const PongWars = () => {
         dy: 8,
         reverseColor: NIGHT_COLOR,
         ballColor: NIGHT_BALL_COLOR,
+        logoSrc: yellowLogo,
       },
     ];
 
     let balls = initializeBalls();
 
     const drawBall = (ball: Ball) => {
-      ctx.beginPath();
-      ctx.arc(ball.x, ball.y, SQUARE_SIZE / 2, 0, Math.PI * 2, false);
-      ctx.fillStyle = ball.ballColor;
-      ctx.fill();
-      
-      // Add glow effect
-      ctx.shadowColor = ball.ballColor;
-      ctx.shadowBlur = 15;
-      ctx.fill();
-      ctx.shadowBlur = 0;
-      
-      ctx.closePath();
+      const img = ball.logoSrc === greenLogo ? greenImg : yellowImg;
+      if (img.complete) {
+        const size = SQUARE_SIZE;
+        ctx.drawImage(img, ball.x - size/2, ball.y - size/2, size, size);
+      } else {
+        // Fallback to circle if image not loaded
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, SQUARE_SIZE / 2, 0, Math.PI * 2, false);
+        ctx.fillStyle = ball.ballColor;
+        ctx.fill();
+        ctx.closePath();
+      }
+    };
+
+    const createSparks = (x: number, y: number) => {
+      for (let i = 0; i < 5; i++) {
+        currentSparks.push({
+          x: x,
+          y: y,
+          dx: (Math.random() - 0.5) * 10,
+          dy: (Math.random() - 0.5) * 10,
+          life: 20,
+          maxLife: 20
+        });
+      }
+    };
+
+    const drawSparks = () => {
+      currentSparks.forEach((spark, index) => {
+        const alpha = spark.life / spark.maxLife;
+        ctx.beginPath();
+        ctx.arc(spark.x, spark.y, 2, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 215, 0, ${alpha})`;
+        ctx.fill();
+        
+        spark.x += spark.dx;
+        spark.y += spark.dy;
+        spark.life--;
+        
+        if (spark.life <= 0) {
+          currentSparks.splice(index, 1);
+        }
+      });
+      setSparks([...currentSparks]);
     };
 
     const drawSquares = () => {
@@ -141,9 +195,11 @@ const PongWars = () => {
     const checkBoundaryCollision = (ball: Ball) => {
       if (ball.x + ball.dx > canvas.width - SQUARE_SIZE / 2 || ball.x + ball.dx < SQUARE_SIZE / 2) {
         ball.dx = -ball.dx;
+        createSparks(ball.x, ball.y);
       }
       if (ball.y + ball.dy > canvas.height - SQUARE_SIZE / 2 || ball.y + ball.dy < SQUARE_SIZE / 2) {
         ball.dy = -ball.dy;
+        createSparks(ball.x, ball.y);
       }
     };
 
@@ -192,6 +248,8 @@ const PongWars = () => {
 
         addRandomness(ball);
       });
+
+      drawSparks();
 
       currentIteration++;
       setIteration(currentIteration);
@@ -244,7 +302,7 @@ const PongWars = () => {
             The eternal battle between $HYPE and $ASTER territories
           </p>
           <p style={{ color: 'hsl(var(--score-text))' }}>
-            Watch as luminous orbs fight to claim dominion over the battlefield
+            Created by Makoto
           </p>
         </div>
       </div>
