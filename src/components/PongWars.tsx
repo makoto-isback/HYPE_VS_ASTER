@@ -194,7 +194,7 @@ const PongWars = () => {
             className="text-xl font-mono tracking-wider mb-2"
             style={{ color: 'hsl(var(--score-text))' }}
           >
-            sage {dayScore} | charcoal {nightScore}
+            $HYPE {dayScore} | $ASTER {nightScore}
           </div>
           <div 
             className="text-sm font-mono opacity-70"
@@ -206,7 +206,7 @@ const PongWars = () => {
 
         <div className="mt-8 text-center text-xs font-mono opacity-60 leading-relaxed">
           <p style={{ color: 'hsl(var(--score-text))' }}>
-            The eternal battle between sage and charcoal territories
+            The eternal battle between $HYPE and $ASTER territories
           </p>
           <p style={{ color: 'hsl(var(--score-text))' }}>
             Watch as luminous orbs fight to claim dominion over the battlefield
